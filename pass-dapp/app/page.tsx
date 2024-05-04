@@ -11,6 +11,23 @@ import { ethers } from "ethers";
 import { BrowserProvider, parseUnits } from "ethers";
 import { HDNodeWallet } from "ethers/wallet";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+
 const abi = [
   {
     "inputs": [],
@@ -538,16 +555,18 @@ const abi = [
   }
 ];
 
+
 export default function GetStarted() {
   const [listOfAccounts, setListOfAccounts] = useState<string[]>([]);
   const [currentAccount, setCurrentAccount] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [currentState, setCurrentState] = useState<string>("0");
+  const [userRole, setUserRole] = useState<string>("-1");
 
   let provider: BrowserProvider;
   let signer: HDNodeWallet | null | undefined | ethers.Signer;
 
-  const chooseAccount = (account: string) => {
+  const chooseAccount = async (account: string) => {
     setCurrentAccount(account);
     setCurrentState('3');
   }
@@ -586,28 +605,60 @@ export default function GetStarted() {
     }
   };
 
+
   const isAdminJS = async () => {
     if (!currentAccount) {
-      alert("Please connect to MetaMask first!");
-      return false;
+      alert("Please select an account");
+      return;
     }
 
     try {
-      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
+      const contractAddress = "0x76C49eDf9E6D48ce8A0918b36aA9A4486E38FF81";
       provider = new ethers.BrowserProvider(window.ethereum);
       signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, abi, signer);
       const isAdmin = await contract.isAdmin();
-
-      alert(`Is Admin: ${isAdmin}`);
-
-      return isAdmin;
+      setUserRole(isAdmin ? "0" : "1");
+      setCurrentState('4');
+      return;
     } catch (err) {
+      console.log(err);
       alert("Something went wrong!")
-      return false;
+      return;
     }
   }
 
+
+  const [countryName, setCountryName] = useState<string>("");
+  const [latLong, setLatLong] = useState<string>("");
+
+  const addCountry = async () => {
+    if (!countryName || !latLong) {
+      alert("Please fill all the fields");
+      return;
+    }
+
+    // check format
+    const latLongArray = latLong.split(",");
+    if (latLongArray.length !== 2) {
+      alert("Invalid latitude and longitude format");
+      return;
+    }
+
+    try {
+      const contractAddress = "0x76C49eDf9E6D48ce8A0918b36aA9A4486E38FF81";
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      await contract.addCountry(countryName, latLong);
+      alert("Country added successfully!");
+      return;
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong!")
+      return;
+    }
+  }
 
   return (
     <div className="flex flex-col justify-center align-middle items-center">
@@ -667,13 +718,60 @@ export default function GetStarted() {
           {currentState === "3" && (
             <div className="mt-8 bg-black bg-opacity-70 rounded-2xl p-4 border border-accent">
               <h1 className="text-xl font-bold">Connected Account</h1>
-              <p className="text-sm text-center">
+              <p className="text-sm text-center mb-4">
                 {currentAccount}
               </p>
+              <Button onClick={isAdminJS}>Confirm Role</Button>
+            </div>
+          )}
 
-              <div className="mt-8">
-                <Button onClick={isAdminJS}>Check if Admin</Button>
-              </div>
+          {currentState === "4" && (
+            <div className="mt-8">
+              <h4 className="text-xl font-bold">You are an Admin</h4>
+              <p className="text-sm text-center">
+                You can now manage the passport system.
+              </p>
+
+              <h1 className="text-2xl font-bold mt-8 mb-8">Countries</h1>
+              <Tabs defaultValue="account" className="w-[400px]">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="account">New Country</TabsTrigger>
+                  <TabsTrigger value="password">List of Countries</TabsTrigger>
+                </TabsList>
+                <TabsContent value="account">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Add Country</CardTitle>
+                      <CardDescription>
+                        Add a new country to the chain.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <Input type="text" id="countryName mt-1" placeholder="India" onChange={(e) => setCountryName(e.target.value)} required />
+                      <Input type="text" id="latLong" className="mt-1 mb-2" onChange={(e) => setLatLong(e.target.value)} placeholder="12.9716, 77.5946" required />
+                      <Button className="w-full" onClick={addCountry}>Add Country</Button>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="password">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>List Of Countruies</CardTitle>
+                      <CardDescription>
+                        List of countries in the chain.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <p>Country 1</p>
+                    </CardContent>
+                    <CardFooter>
+                      <p>Footer</p>
+                    </CardFooter>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+
             </div>
           )}
         </div>
