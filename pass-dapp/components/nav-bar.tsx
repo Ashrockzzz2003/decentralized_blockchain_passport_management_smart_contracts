@@ -12,8 +12,10 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
+import Image from "next/image"
 
 export function NavBar() {
+
   return (
     <NavigationMenu className="my-4">
       <NavigationMenuList>
@@ -70,14 +72,15 @@ export function NavBar() {
         <NavigationMenuItem>
           <Link href="/" legacyBehavior passHref>
             <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-              Home
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <Link href="/get-started" legacyBehavior passHref>
-            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-              Get Started
+              <div className="text-md flex flex-row align-middle items-center justify-center space-x-2">
+              <Image
+                src="/logo.png"
+                alt="Passport Dapp"
+                width={32}
+                height={32}
+                className="rounded-lg" />
+                <p className="font-medium">Passport Dapp</p>
+              </div>
             </NavigationMenuLink>
           </Link>
         </NavigationMenuItem>
