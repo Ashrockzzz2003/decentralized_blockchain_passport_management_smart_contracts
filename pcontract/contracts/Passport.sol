@@ -62,6 +62,10 @@ contract DecentralizedPassport {
         _;
     }
 
+    function isAdmin() public view returns (bool) {
+        return msg.sender == admin;
+    }
+
     // Country API
     event CountryAdded(
         uint256 countryId,
