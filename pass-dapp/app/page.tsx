@@ -11,6 +11,8 @@ import { ethers } from "ethers";
 import { BrowserProvider, parseUnits } from "ethers";
 import { HDNodeWallet } from "ethers/wallet";
 
+import { useQRCode } from "next-qrcode";
+
 const abi = [
   {
     "inputs": [],
@@ -605,6 +607,19 @@ const abi = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPassportStatus",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ];
 
@@ -614,7 +629,9 @@ export default function GetStarted() {
   const [currentAccount, setCurrentAccount] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [currentState, setCurrentState] = useState<string>("0");
+
   const [userRole, setUserRole] = useState<string>("-1");
+  const [userPassportStatus, setUserPassportStatus] = useState<string>("-1");
 
   let provider: BrowserProvider;
   let signer: HDNodeWallet | null | undefined | ethers.Signer;
@@ -630,8 +647,9 @@ export default function GetStarted() {
         method: "eth_accounts",
       });
       if (accounts.length > 0) {
-        setListOfAccounts(accounts);
-        setCurrentState('2');
+        // console.log(accounts);
+        setCurrentAccount(accounts[0]);
+        setCurrentState('3');
         return true;
       }
       return false;
@@ -658,8 +676,8 @@ export default function GetStarted() {
     }
   };
 
-
-  const isAdminJS = async () => {
+  const [currentUserPassportData, setCurrentUserPassportData] = useState<any>({});
+  const confirmRoleJS = async () => {
     if (!currentAccount) {
       alert("Please select an account");
       return;
@@ -671,7 +689,37 @@ export default function GetStarted() {
       signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, abi, signer);
       const isAdmin = await contract.isAdmin();
-      setUserRole(isAdmin ? "0" : "1");
+
+      if (isAdmin) {
+        setUserRole("0")
+      } else {
+        const isIssuer = await contract.isIssuer(currentAccount);
+        if (isIssuer) {
+          setUserRole("1")
+        } else {
+          setUserRole("2")
+
+          // call with signer
+
+          const getPassportStatus = await contract.getPassportStatus();
+
+          if (getPassportStatus === "A") {
+            setUserPassportStatus("A");
+
+            const getPassport = await contract.getPassport();
+            console.log(getPassport);
+
+            setCurrentUserPassportData(getPassport);
+
+          } else if (getPassportStatus === "P") {
+            setUserPassportStatus("P");
+          } else {
+            setUserPassportStatus("N");
+          }
+
+        }
+      }
+
       setCurrentState('4');
       return;
     } catch (err) {
@@ -803,10 +851,95 @@ export default function GetStarted() {
     setCurrentTab(tab);
   }
 
+
+  const [userPassportName, setUserPassportName] = useState<string>("");
+  const [userPassportDob, setUserPassportDob] = useState<string>("");
+  const [userPassportCountry, setUserPassportCountry] = useState<string>("");
+
+  const requestPassport = async () => {
+    if (!userPassportName || !userPassportDob || !userPassportCountry) {
+      alert("Please fill all the fields");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      await contract.requestPassport(userPassportName, userPassportDob, userPassportCountry);
+
+      setUserPassportStatus("P");
+
+      alert("Passport requested successfully!");
+      return;
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong!")
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+
+  }
+
+
+  const [pendingPassportData, setPendingPassportData] = useState<any[]>([]);
+
+  const getPendingPassport = async () => {
+    setIsLoading(true);
+
+    try {
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      const pendingPassports = await contract.getPendingPassport();
+
+      console.log(pendingPassports);
+      setPendingPassportData(pendingPassports);
+      return;
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong!")
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
+  const approvePassport = async (passportId: string) => {
+    setIsLoading(true);
+
+    try {
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      await contract.approvePassport(passportId);
+
+      alert("Passport approved successfully!");
+      setPendingPassportData(pendingPassportData.filter((passport) => passport.passportId !== passportId));
+      return;
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong!")
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
+  const { Canvas } = useQRCode();
+
   return isLoading == true ? (
     <div className="flex flex-col justify-center align-middle items-center">
       <NavBar />
-      <div role="status" className="min-w-[70%] p-4 space-y-4 border border-gray-200 divide-y divide-gray-200 rounded shadow animate-pulse dark:divide-gray-700 md:p-6 dark:border-gray-700">
+      <div role="status" className="min-w-[70%] p-4 space-y-4 border border-gray-200 divide-y divide-gray-200 rounded-2xl shadow animate-pulse dark:divide-gray-700 md:p-6 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>
             <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
@@ -907,11 +1040,11 @@ export default function GetStarted() {
               <p className="text-sm text-center mb-4">
                 {currentAccount}
               </p>
-              <Button onClick={isAdminJS}>Confirm Role</Button>
+              <Button onClick={confirmRoleJS}>Confirm Role</Button>
             </div>
           )}
 
-          {currentState === "4" && (
+          {currentState === "4" && userRole === "0" && (
             <div className="mt-8">
               <h4 className="text-xl font-bold">You are an Admin</h4>
               <p className="text-sm text-center">
@@ -927,7 +1060,7 @@ export default function GetStarted() {
 
               {currentTab === '0' && (<div className="mb-32"><h2 className="text-xl font-bold mt-8">Countries</h2>
                 <div className="flex flex-row flex-wrap justify-center items-center gap-4 mt-4">
-                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4 max-w-[48%]">
                     <h1 className="text-xl font-bold">Add Country</h1>
                     <input
                       type="text"
@@ -967,7 +1100,7 @@ export default function GetStarted() {
               {currentTab === "1" && (<div className="mb-32">
                 <h2 className="text-xl font-bold mt-8">Issuers</h2>
                 <div className="flex flex-row flex-wrap justify-center items-center gap-4 my-4">
-                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4 max-w-[40%]">
                     <h1 className="text-xl font-bold">Register Issuer</h1>
                     <input
                       type="text"
@@ -1006,7 +1139,7 @@ export default function GetStarted() {
                       <Button disabled={!(issuerSearchCountry.length > 0)} onClick={getIssuerByCountry}>Get Issuers</Button>
                       {issuerData.length > 0 && (
                         <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
-                          <h1 className="text-xl font-bold">Issuers</h1>
+                          <h1 className="text-xl font-bold">Issuers | {issuerSearchCountry}</h1>
                           <div className="flex flex-col gap-4 mt-4">
                             {issuerData.map((issuer, index) => (
                               <div key={index} className="flex flex-col gap-1 border border-accent p-2 rounded-2xl align-middle justify-center items-center">
@@ -1024,6 +1157,121 @@ export default function GetStarted() {
 
             </div>
           )}
+
+
+          {currentState === "4" && userRole === "1" && (
+            <div className="mt-8">
+              <h4 className="text-xl font-bold">You are an Issuer</h4>
+              <p className="text-sm text-center">
+                You can now issue passports to users.
+              </p>
+
+              <h2 className="text-xl font-bold mt-8 mb-2">Passports waiting for your approval</h2>
+              <Button onClick={getPendingPassport}>Get Pending Passports</Button>
+
+              {pendingPassportData.length > 0 && (
+                <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                  <h1 className="text-xl font-bold">Pending Passports</h1>
+                  <div className="flex flex-col gap-4 mt-4">
+                    {pendingPassportData.map((passport, index) => (
+                      <div key={index} className="flex flex-col gap-1 border border-accent p-2 rounded-2xl align-middle justify-center items-center">
+                        <p>{passport.userName.toString()}</p>
+                        <p className="text-xs text-gray-400">{passport.userAddress.toString()}</p>
+                        <p className="text-xs text-gray-400">{passport.userDob.toString()}</p>
+                        <p className="text-xs text-gray-400 mb-2">CreatedAt: {new Date(parseInt(passport.createdAt) * 1000).toLocaleString()}</p>
+                        <Button onClick={() => approvePassport(passport.passportId)}>Approve</Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+
+          {currentState === "4" && userRole === "2" && (
+            <div className="mt-8">
+              {userPassportStatus === "N" && (
+                <div>
+                  <h4 className="text-xl font-bold">Welcome to Passport Dapp</h4>
+                  <p className="text-sm text-center">
+                    You can request for a passport.
+                  </p>
+
+                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                    <h1 className="text-xl font-bold">Request Passport</h1>
+
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={userPassportName}
+                      onChange={(e) => setUserPassportName(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+
+                    <input
+                      type="date"
+                      placeholder="Date of Birth"
+                      value={userPassportDob}
+                      onChange={(e) => setUserPassportDob(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder="Country"
+                      value={userPassportCountry}
+                      onChange={(e) => setUserPassportCountry(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+
+                    <Button onClick={requestPassport} className="mt-4">Request Passport</Button>
+                  </div>
+                </div>
+              )}
+
+
+              {userPassportStatus === "P" && (
+                <div>
+                  <h4 className="text-xl font-bold">Passport Requested</h4>
+                  <p className="text-sm text-center">
+                    Your passport request is pending.
+                  </p>
+                </div>
+              )}
+
+              {userPassportStatus === "A" && (
+                <div>
+                  <h4 className="text-xl font-bold">Passport Approved</h4>
+                  <p className="text-sm text-center">
+                    Your passport request has been approved.
+                  </p>
+
+                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                    <h1 className="text-xl font-bold">Your Passport</h1>
+                    <div className="flex flex-col gap-1 mt-4 justify-center items-center">
+                      {/* QR Code */}
+                      <Canvas
+                          text={currentUserPassportData.userAddress.toString()}
+                          options={{
+                            errorCorrectionLevel: 'M',
+                            margin: 3,
+                            scale: 4,
+                            width: 200,
+                          }}
+                      />
+                      <p>{currentUserPassportData.userName.toString()}</p>
+                      <p className="text-xs text-gray-400">{currentUserPassportData.userAddress.toString()}</p>
+                      <p className="text-xs text-gray-400">{currentUserPassportData.userDob.toString()}</p>
+                      <p className="text-xs text-gray-400 mb-2">CreatedAt: {new Date(parseInt(currentUserPassportData.createdAt) * 1000).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
