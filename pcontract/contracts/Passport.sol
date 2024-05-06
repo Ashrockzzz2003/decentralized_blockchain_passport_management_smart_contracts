@@ -303,4 +303,14 @@ contract DecentralizedPassport {
 
         return true;
     }
+
+    function getPassportStatus() public view returns (string memory) {
+        if (hasPassport[msg.sender]) {
+            return "A";
+        } else if (hasPendingPassport[msg.sender]) {
+            return "P";
+        } else {
+            return "N";
+        }
+    }
 }
