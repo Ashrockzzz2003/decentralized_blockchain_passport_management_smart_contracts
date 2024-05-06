@@ -40,6 +40,7 @@ contract DecentralizedPassport {
     mapping(string => bool) public isCountry;
     mapping(uint256 => Country) private countryById;
     mapping(string => Country) public countryByName;
+    Country[] public countryData;
 
     mapping(address => bool) public isIssuer;
     mapping(string => Issuer) private issuerByName;
@@ -90,6 +91,8 @@ contract DecentralizedPassport {
         countryByName[_countryName] = country;
         isCountry[_countryName] = true;
 
+        countryData.push(country);
+
         emit CountryAdded(
             auto_increment_country_id,
             _countryName,
@@ -116,12 +119,25 @@ contract DecentralizedPassport {
         country.updatedAt = block.timestamp;
         countryByName[_countryName] = country;
 
+
+        // update array
+        for (uint256 i = 0; i < countryData.length; i++) {
+            if (countryData[i].countryId == _countryId) {
+                countryData[i] = country;
+                break;
+            }
+        }
+
         emit CountryUpdated(
             _countryId,
             _countryName,
             _latLong,
             block.timestamp
         );
+    }
+
+    function getCountries() public view returns (Country[] memory) {
+        return countryData;
     }
 
     // Issuer API
