@@ -5,28 +5,11 @@ import { Button } from "@/components/ui/button";
 import { WhyMetamask } from "@/components/why-metamask";
 import { Contract } from "ethers";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ethers } from "ethers";
 import { BrowserProvider, parseUnits } from "ethers";
 import { HDNodeWallet } from "ethers/wallet";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
 
 const abi = [
   {
@@ -170,8 +153,46 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "countryData",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "countryId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "countryName",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "latLong",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "createdAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "updatedAt",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [
@@ -190,8 +211,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   },
   {
     "inputs": [
@@ -210,8 +230,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   },
   {
     "inputs": [],
@@ -224,8 +243,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   },
   {
     "inputs": [
@@ -266,6 +284,46 @@ const abi = [
     "name": "updateCountry",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCountries",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "countryId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "countryName",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "latLong",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "createdAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "updatedAt",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct DecentralizedPassport.Country[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -335,8 +393,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   },
   {
     "inputs": [
@@ -409,8 +466,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   },
   {
     "inputs": [
@@ -473,8 +529,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   },
   {
     "inputs": [
@@ -530,8 +585,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   },
   {
     "inputs": [
@@ -550,8 +604,7 @@ const abi = [
       }
     ],
     "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "type": "function"
   }
 ];
 
@@ -613,7 +666,7 @@ export default function GetStarted() {
     }
 
     try {
-      const contractAddress = "0x76C49eDf9E6D48ce8A0918b36aA9A4486E38FF81";
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
       provider = new ethers.BrowserProvider(window.ethereum);
       signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, abi, signer);
@@ -632,6 +685,7 @@ export default function GetStarted() {
   const [countryName, setCountryName] = useState<string>("");
   const [latLong, setLatLong] = useState<string>("");
 
+  const [countryData, setCountryData] = useState<any[]>([]);
   const addCountry = async () => {
     if (!countryName || !latLong) {
       alert("Please fill all the fields");
@@ -645,8 +699,10 @@ export default function GetStarted() {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      const contractAddress = "0x76C49eDf9E6D48ce8A0918b36aA9A4486E38FF81";
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
       provider = new ethers.BrowserProvider(window.ethereum);
       signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, abi, signer);
@@ -657,10 +713,140 @@ export default function GetStarted() {
       console.log(err);
       alert("Something went wrong!")
       return;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  const getCountries = async () => {
+
+    setIsLoading(true);
+
+    try {
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
+      provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(contractAddress, abi, provider);
+      const countries = await contract.getCountries();
+
+      console.log(countries);
+
+      setCountryData(countries);
+
+      return;
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong!")
+      return;
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  return (
+
+  const [issuerName, setIssuerName] = useState<string>("");
+  const [issuerAddress, setIssuerAddress] = useState<string>("");
+  const [issuerCountry, setIssuerCountry] = useState<string>("");
+
+  const [issuerSearchCountry, setIssuerSearchCountry] = useState<string>("");
+  const [issuerData, setIssuerData] = useState<any[]>([]);
+
+  const registerIssuer = async () => {
+    if (!issuerName || !issuerAddress || !issuerCountry) {
+      alert("Please fill all the fields");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      await contract.registerIssuer(issuerAddress, issuerName, issuerCountry);
+      alert("Issuer registered successfully!");
+      return;
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong!")
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const getIssuerByCountry = async () => {
+    setIsLoading(true);
+
+    try {
+      const contractAddress = "0xe2c987583ECcC7faE957dB2836f7AD7a6F4F4289";
+      provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(contractAddress, abi, provider);
+      const issuers = await contract.getIssuerByCountry(issuerSearchCountry);
+
+      console.log(issuers);
+      setIssuerData(issuers);
+
+      return;
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong!")
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
+  const [currentTab, setCurrentTab] = useState<string>("0");
+
+  const switchTab = (tab: string) => {
+    setCurrentTab(tab);
+  }
+
+  return isLoading == true ? (
+    <div className="flex flex-col justify-center align-middle items-center">
+      <NavBar />
+      <div role="status" className="min-w-[70%] p-4 space-y-4 border border-gray-200 divide-y divide-gray-200 rounded shadow animate-pulse dark:divide-gray-700 md:p-6 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+            <div className="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+          </div>
+          <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+        </div>
+        <div className="flex items-center justify-between pt-4">
+          <div>
+            <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+            <div className="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+          </div>
+          <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+        </div>
+        <div className="flex items-center justify-between pt-4">
+          <div>
+            <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+            <div className="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+          </div>
+          <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+        </div>
+        <div className="flex items-center justify-between pt-4">
+          <div>
+            <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+            <div className="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+          </div>
+          <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+        </div>
+        <div className="flex items-center justify-between pt-4">
+          <div>
+            <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24 mb-2.5"></div>
+            <div className="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+          </div>
+          <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-700 w-12"></div>
+        </div>
+        <span className="sr-only">Loading...</span>
+      </div>
+
+    </div>
+  ) : (
     <div className="flex flex-col justify-center align-middle items-center">
       <NavBar />
 
@@ -732,50 +918,114 @@ export default function GetStarted() {
                 You can now manage the passport system.
               </p>
 
-              <h1 className="text-2xl font-bold mt-8 mb-8">Countries</h1>
-              <Tabs defaultValue="account" className="w-[400px]">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="account">New Country</TabsTrigger>
-                  <TabsTrigger value="password">List of Countries</TabsTrigger>
-                </TabsList>
-                <TabsContent value="account">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Add Country</CardTitle>
-                      <CardDescription>
-                        Add a new country to the chain.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <Input type="text" id="countryName mt-1" placeholder="India" onChange={(e) => setCountryName(e.target.value)} required />
-                      <Input type="text" id="latLong" className="mt-1 mb-2" onChange={(e) => setLatLong(e.target.value)} placeholder="12.9716, 77.5946" required />
-                      <Button className="w-full" onClick={addCountry}>Add Country</Button>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="password">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>List Of Countruies</CardTitle>
-                      <CardDescription>
-                        List of countries in the chain.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <p>Country 1</p>
-                    </CardContent>
-                    <CardFooter>
-                      <p>Footer</p>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              {/* TAbs */}
+              <div className="flex flex-row gap-4 mt-8 justify-center items-center">
+                <Button onClick={() => switchTab('0')}>Countries</Button>
+                <Button onClick={() => switchTab('1')}>Issuers</Button>
+              </div>
 
+
+              {currentTab === '0' && (<div className="mb-32"><h2 className="text-xl font-bold mt-8">Countries</h2>
+                <div className="flex flex-row flex-wrap justify-center items-center gap-4 mt-4">
+                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                    <h1 className="text-xl font-bold">Add Country</h1>
+                    <input
+                      type="text"
+                      placeholder="Country Name"
+                      value={countryName}
+                      onChange={(e) => setCountryName(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Latitude, Longitude"
+                      value={latLong}
+                      onChange={(e) => setLatLong(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+                    <Button onClick={addCountry} className="mt-4">Add Country</Button>
+                  </div>
+                  <div className="flex flex-col flex-wrap justify-center items-center gap-4 mt-8">
+                    <Button onClick={getCountries}>Get Countries</Button>
+                    {countryData.length > 0 && (
+                      <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                        <h1 className="text-xl font-bold">Countries</h1>
+                        <div className="flex flex-col gap-4 mt-4">
+                          {countryData.map((country, index) => (
+                            <div key={index} className="flex flex-col gap-1 border border-accent p-2 rounded-2xl align-middle justify-center items-center">
+                              <p>{country.countryName.toString()}</p>
+                              <p className="text-sm text-gray-400">{country.latLong.toString()}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div></div>)}
+
+
+              {currentTab === "1" && (<div className="mb-32">
+                <h2 className="text-xl font-bold mt-8">Issuers</h2>
+                <div className="flex flex-row flex-wrap justify-center items-center gap-4 my-4">
+                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                    <h1 className="text-xl font-bold">Register Issuer</h1>
+                    <input
+                      type="text"
+                      placeholder="Issuer Name"
+                      value={issuerName}
+                      onChange={(e) => setIssuerName(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Issuer Address"
+                      value={issuerAddress}
+                      onChange={(e) => setIssuerAddress(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Issuer Country"
+                      value={issuerCountry}
+                      onChange={(e) => setIssuerCountry(e.target.value)}
+                      className="border border-accent p-2 rounded-lg w-full mt-4"
+                    />
+                    <Button onClick={registerIssuer} className="mt-4">Register Issuer</Button>
+                  </div>
+
+                  <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                    <div className="flex flex-col flex-wrap justify-center items-center gap-2">
+                      <h1 className="text-lg font-bold mb-2">Get Issuers by country</h1>
+                      <input
+                        type="text"
+                        placeholder="Country Name"
+                        value={issuerSearchCountry}
+                        onChange={(e) => setIssuerSearchCountry(e.target.value)}
+                        className="border border-accent p-2 rounded-lg w-full mt-4"
+                      />
+                      <Button disabled={!(issuerSearchCountry.length > 0)} onClick={getIssuerByCountry}>Get Issuers</Button>
+                      {issuerData.length > 0 && (
+                        <div className="bg-black bg-opacity-70 rounded-2xl p-4 border border-accent mt-4">
+                          <h1 className="text-xl font-bold">Issuers</h1>
+                          <div className="flex flex-col gap-4 mt-4">
+                            {issuerData.map((issuer, index) => (
+                              <div key={index} className="flex flex-col gap-1 border border-accent p-2 rounded-2xl align-middle justify-center items-center">
+                                <p>{issuer.issuerName.toString()}</p>
+                                <p className="text-sm text-gray-400">{issuer.issuerAddress.toString()}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>)}
 
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }
