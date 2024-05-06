@@ -4,7 +4,7 @@
 
 - [x] System Architecture Planning
 - [x] Smart Contract (.sol)
-- [ ] Frontend (Coming soon)
+- [x] Frontend (Done using `Next.js`, `TypeScript`, `TailwindCSS`, `Web3`, `Ethers.js`)
 
 ## Team
 
